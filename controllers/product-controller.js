@@ -1,5 +1,11 @@
 const productModel = require("../models/productModel");
 const userModel = require("../models/userModel");
+const checkAdminService = require("../services/auth-srtvice");
+const {
+  updateMultipleProductDetail,
+  validateDataService,
+  deleteProductDetailService,
+} = require("../services/product-service");
 const cloudinary = require("../utils/cloudinary");
 const customError = require("../utils/customError");
 
@@ -169,13 +175,13 @@ const deleteProduct = async (req, res, next) => {
 
 const addProduct = async (req, res, next) => {
   try {
-    const { productDetail } = req.body;
+    const { productDetails } = req.body;
     const userId = req.user;
     const productId = req.params.id;
 
     // Check data
-    if (!productDetail) {
-      throw customError("Please fill in all information.", 400);
+    if (!productDetails || !Array.isArray(productDetails)) {
+      throw customError("Please provide product details array.", 400);
     }
 
     //   check login
@@ -189,20 +195,75 @@ const addProduct = async (req, res, next) => {
       throw customError("No admin rights to access the api.", 400);
     }
 
-    // Add product detail
+    // find main product
     const product = await productModel.findById(productId);
     if (!product) {
       throw customError("Product not found.", 404);
     }
 
-    product.productAccount.push({
-      productDetail,
-      createDate: new Date(),
-      status: "sell",
+    // Add product detail
+    productDetails.forEach((detail) => {
+      product.productAccount.push({
+        productDetail: detail,
+        createDate: new Date(),
+        status: "sell",
+      });
     });
     await product.save();
 
-    res.status(200).json(product);
+    res
+      .status(200)
+      .json({ message: "add product detail success.", data: product });
+  } catch (err) {
+    next(err);
+    console.log(err);
+  }
+};
+
+const updateProductDetail = async (req, res, next) => {
+  try {
+    const { productDetail } = req.body;
+    const userId = req.user;
+    const productId = req.params.id;
+
+    // validateData
+    await validateDataService(userId, productDetail);
+
+    // update productDetail
+    const productDetailUpdate = await updateMultipleProductDetail(
+      productId,
+      productDetail
+    );
+
+    res.status(200).json({
+      message: "Product detail updated successfully",
+      productDetailUpdate,
+    });
+  } catch (err) {
+    next(err);
+    console.log(err);
+  }
+};
+
+const deleteProductDetail = async (req, res, next) => {
+  try {
+    const userId = req.user;
+    const productId = req.params.id;
+    const { productAccountIds } = req.body;
+
+    // validateData
+    await checkAdminService(userId);
+
+    // delete productDetail
+    const deleteProduct = await deleteProductDetailService(
+      productId,
+      productAccountIds
+    );
+
+    res.status(200).json({
+      message: "Product detail deleted successfully",
+      deleteProduct,
+    });
   } catch (err) {
     next(err);
     console.log(err);
@@ -216,4 +277,6 @@ module.exports = {
   updateProduct,
   deleteProduct,
   addProduct,
+  updateProductDetail,
+  deleteProductDetail,
 };

@@ -6,6 +6,8 @@ const {
   updateProduct,
   deleteProduct,
   addProduct,
+  updateProductDetail,
+  deleteProductDetail,
 } = require("../controllers/product-controller");
 const authMiddleware = require("../middlewares/auth-middleware");
 const multer = require("multer");
@@ -19,6 +21,8 @@ router.get("/:id", getProduct);
 router.put("/:id", authMiddleware, upload.single("image"), updateProduct);
 router.delete("/:id", authMiddleware, deleteProduct);
 router.put("/add/:id", authMiddleware, addProduct);
+router.put("/detail/:id", authMiddleware, updateProductDetail);
+router.delete("/detail/:id", authMiddleware, deleteProductDetail);
 
 module.exports = router;
 
@@ -239,7 +243,53 @@ module.exports = router;
  * @swagger
  * /products/add/{id}:
  *   put:
- *     summary: Add product details by ID
+ *     summary: Add multiple product details by ID
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The product ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               productDetails:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of product details to add
+ *             example:
+ *               productDetails: ["Detail 1", "Detail 2", "Detail 3"]
+ *     responses:
+ *       200:
+ *         description: Product details added successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 data:
+ *                   $ref: '#/components/schemas/Product'
+ *       400:
+ *         description: Bad request or invalid input
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Product not found
+ */
+/**
+ * @swagger
+ * /products/detail/{id}:
+ *   put:
+ *     summary: Update product details by ID
  *     tags: [Products]
  *     parameters:
  *       - in: path
@@ -256,10 +306,62 @@ module.exports = router;
  *             type: object
  *             properties:
  *               productDetail:
- *                 type: string
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     productDetailId:
+ *                       type: string
+ *                       description: The product detail ID
+ *                     updateData:
+ *                       type: object
+ *                       properties:
+ *                         productDetail:
+ *                           type: string
+ *                         createDate:
+ *                           type: string
+ *                           format: date-time
+ *                         status:
+ *                           type: string
+ *                           enum: [sell, sold, problem]
  *     responses:
  *       200:
- *         description: Product details added successfully
+ *         description: Product detail updated successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Product not found
+ */
+/**
+ * @swagger
+ * /products/detail/{id}:
+ *   delete:
+ *     summary: Delete product details by ID
+ *     tags: [Products]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The product ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               productAccountIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: Array of product account IDs to be deleted
+ *     responses:
+ *       200:
+ *         description: Product detail deleted successfully
  *       400:
  *         description: Bad request
  *       401:
